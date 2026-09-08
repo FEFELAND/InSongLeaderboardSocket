@@ -68,6 +68,7 @@ public class Plugin
 
         RuntimeHooks.EnsureCreated();
         RuntimeHooks.ScheduleSettingsMenuRegistration();
+        RuntimeHooks.StartBackgroundUpdateChecks();
         _ = FetchUserInfoAsync();
 
         BroadcastConfig();

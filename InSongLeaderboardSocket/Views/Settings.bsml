@@ -1,4 +1,24 @@
 <scrollable-settings-container>
+  <horizontal id="disclaimer-header" active="false" pref-height="6" background="panel-top" pad-left="3" pad-right="3" child-align="MiddleCenter">
+    <text text="Hey there!" font-size="6" bold="true" align="Center"/>
+  </horizontal>
+  <horizontal id="disclaimer-text-1" active="false" pref-height="16" pref-width="90" background="round-rect-panel" pad-top="2" pad-left="4" pad-right="4" pad-bottom="2">
+    <text text="Unfortunately, this mod is entirely vibe-coded. That doesn't mean things are untested though. Just means that there might be horrors in the code I'm unaware of..." font-size="3.2" word-wrapping="true" align="TopLeft" color="#dddddd"/>
+  </horizontal>
+  <horizontal id="disclaimer-text-2" active="false" pref-height="16" pref-width="90" background="round-rect-panel" pad-top="2" pad-left="4" pad-right="4" pad-bottom="2">
+    <text text="If you are ok with that, feel free to continue checking things out. Enjoy!" font-size="3.2" word-wrapping="true" align="TopLeft" color="#dddddd"/>
+  </horizontal>
+  <horizontal id="disclaimer-footer" active="false" pref-height="6" background="panel-top" pad-left="3" pad-right="3" child-align="MiddleCenter">
+    <text text="- FEFE" font-size="3.2" align="Center" color="#888888"/>
+  </horizontal>
+  <horizontal id="disclaimer-button-row" active="false" pref-height="14" child-align="MiddleCenter">
+    <button id="disclaimer-accept" text="I understand" on-click="accept-disclaimer" pref-width="60" pref-height="10"/>
+  </horizontal>
+
+  <horizontal bg="round-rect-panel" pad="1">
+    <text id="update-status-text" text="Checking for updates..." font-size="2.8" word-wrapping="true" align="TopLeft"/>
+  </horizontal>
+
   <settings-submenu text="About" hover-hint="Information about this mod" font-size="4">
     <scrollable-settings-container>
       <clickable-text text="&#60; Back" align="Left" click-event="back" font-size="2.5" color="white" pad-bottom="1" />

@@ -9,6 +9,7 @@ internal sealed class RuntimeHooks : MonoBehaviour
     private static RuntimeHooks? _instance;
     private Coroutine? _settingsRegistrationRoutine;
     private Coroutine? _replayIdentityRoutine;
+    private Coroutine? _updateCheckLoop;
 
     internal static void EnsureCreated()
     {
@@ -30,6 +31,19 @@ internal sealed class RuntimeHooks : MonoBehaviour
     {
         EnsureCreated();
         _instance?.ScheduleReplayIdentityRefreshInternal();
+    }
+
+    internal static void RunCoroutine(IEnumerator routine)
+    {
+        EnsureCreated();
+        if (_instance == null) return;
+        _instance.StartCoroutine(routine);
+    }
+
+    internal static void StartBackgroundUpdateChecks()
+    {
+        EnsureCreated();
+        _instance?.StartBackgroundUpdateChecksInternal();
     }
 
     private void Awake()
@@ -65,6 +79,25 @@ internal sealed class RuntimeHooks : MonoBehaviour
             StopCoroutine(_replayIdentityRoutine);
 
         _replayIdentityRoutine = StartCoroutine(RefreshReplayIdentityWhenReady());
+    }
+
+    private void StartBackgroundUpdateChecksInternal()
+    {
+        if (_updateCheckLoop != null)
+            return;
+
+        _updateCheckLoop = StartCoroutine(BackgroundUpdateCheckLoop());
+    }
+
+    private IEnumerator BackgroundUpdateCheckLoop()
+    {
+        yield return new WaitForSeconds(5f);
+
+        while (true)
+        {
+            yield return SettingsHost.RunUpdateCheck();
+            yield return new WaitForSeconds(600f);
+        }
     }
 
     private IEnumerator RegisterSettingsMenuWhenReady(bool immediate)

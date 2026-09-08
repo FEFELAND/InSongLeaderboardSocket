@@ -21,6 +21,7 @@ public class PluginConfig
     public virtual string Alignment { get; set; } = "left";
     public virtual int FadeDepth { get; set; } = 5;
     public virtual bool RankByAccuracy { get; set; }
+    public virtual bool ClickedDisclaimer { get; set; }
 
     public event Action? ConfigChanged;
 
