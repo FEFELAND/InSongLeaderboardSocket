@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InSong Leaderboard Overlay</title>
+<style>
+  :root {
+    --fs-body: 16px;
+    --fs-name: calc(var(--fs-body) * 1.25);
+    --fs-score: calc(var(--fs-body) * 0.875);
+    --fs-rank: calc(var(--fs-body) * 0.8125);
+    --fs-acc: calc(var(--fs-body) * 1.125);
+    --fs-stats: calc(var(--fs-body) * 1.375);
+    --fs-stats-label: calc(var(--fs-body) * 0.6875);
+    --fs-idle: calc(var(--fs-body) * 1);
+    --bg-amount: 1;
+    --color-player: #66ccff;
+    --color-pb: #ffcc33;
+    --color-text: #ffffff;
+    --align: left;
+    --align-opposite: right;
+    --align-content: flex-start;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: transparent;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    color: #fff;
+    user-select: none;
+  }
+
+  #leaderboard {
+    padding: 10px 14px;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 0.35s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #leaderboard.hidden {
+    opacity: 0;
+  }
+
+  .player-header {
+    display: flex;
+    flex-direction: var(--entry-direction, row);
+    justify-content: space-around;
+    margin-bottom: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,calc(0.08 * var(--bg-amount)));
+    flex-shrink: 0;
+    text-align: var(--align);
+  }
+
+  .player-header .stat { text-align: center; }
+  .player-header .stat-label { color: rgba(255,255,255,0.35); font-size: var(--fs-stats-label); text-transform: uppercase; }
+  .player-header .stat-value { font-weight: 700; font-size: var(--fs-stats); color: var(--color-player); }
+  .player-header .stat-value.rank { color: var(--color-pb); }
+  .player-header .stat-value.acc { color: #5f5; }
+  .player-header .stat-label,
+  .player-header .stat-value,
+  .placeholder {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  }
+
+  #rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 0;
+  }
+
+  .entry {
+    flex: 0 0 calc((100% - (var(--rows, 10) - 1) * 3px) / var(--rows, 10));
+    display: flex;
+    flex-direction: var(--entry-direction, row);
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0,0,0,var(--bg-amount));
+    border: 1px solid rgba(255,255,255,calc(0.10 * var(--bg-amount)));
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .entry.current-player {
+    border-color: rgba(var(--color-player-r), var(--color-player-g), var(--color-player-b), calc(0.55 * var(--bg-amount)));
+    box-shadow: inset 0 0 0 1px rgba(var(--color-player-r), var(--color-player-g), var(--color-player-b), calc(0.18 * var(--bg-amount)));
+  }
+
+  .entry.personal-best {
+    border-color: rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), calc(0.50 * var(--bg-amount)));
+    box-shadow: inset 0 0 0 1px rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), calc(0.16 * var(--bg-amount)));
+  }
+
+  .entry.current-player.personal-best {
+    border-color: rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), calc(0.55 * var(--bg-amount)));
+    box-shadow: inset 0 0 0 1px rgba(var(--color-player-r), var(--color-player-g), var(--color-player-b), calc(0.18 * var(--bg-amount))), 0 0 8px rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), calc(0.30 * var(--bg-amount)));
+  }
+
+  .entry.rank-up {
+    background: linear-gradient(
+      105deg,
+      transparent 0%, transparent 25%,
+      rgba(255,255,255,0.40) 40%, rgba(255,255,255,0.70) 50%, rgba(255,255,255,0.40) 60%,
+      transparent 75%, transparent 100%
+    ) rgba(0,0,0,var(--bg-amount));
+    background-size: 200% 100%;
+    background-position: 200% 0;
+    background-repeat: no-repeat;
+    animation: rankUpSweep 0.6s ease-out forwards;
+  }
+
+  @keyframes rankUpSweep {
+    0% { background-position: 200% 0; }
+    100% { background-position: -100% 0; }
+  }
+
+  .entry .avatar {
+    align-self: stretch;
+    width: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    margin-inline-end: 8px;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(255,255,255,0.08);
+  }
+
+  .entry .info { flex: 1; min-width: 0; text-align: var(--align); }
+
+  .entry .name-row { display: flex; align-items: center; gap: 8px; justify-content: var(--align-content); }
+
+  .entry .name {
+    font-size: var(--fs-name);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: rgba(var(--color-text-r), var(--color-text-g), var(--color-text-b), 0.85);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+  }
+
+  .entry.current-player .name { color: var(--color-player); font-weight: 700; }
+  .entry.personal-best .name { color: var(--color-pb); }
+
+  .entry .pb-badge {
+    font-size: calc(var(--fs-body) * 0.625);
+    font-weight: 700;
+    background: rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), 0.25);
+    color: var(--color-pb);
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+
+  .entry .score {
+    font-size: var(--fs-score);
+    font-weight: 700;
+    color: rgba(var(--color-text-r), var(--color-text-g), var(--color-text-b), 0.4);
+    font-variant-numeric: tabular-nums;
+    margin-top: 1px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+  }
+
+  .entry.current-player .score { color: rgba(var(--color-player-r), var(--color-player-g), var(--color-player-b), 0.6); }
+  .entry.current-player .accuracy { color: rgba(var(--color-player-r), var(--color-player-g), var(--color-player-b), 0.6); }
+  .entry.personal-best .score { color: rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), 0.6); }
+  .entry.personal-best .accuracy { color: rgba(var(--color-pb-r), var(--color-pb-g), var(--color-pb-b), 0.6); }
+
+  .entry .right { text-align: var(--align); flex-shrink: 0; margin-inline-start: 10px; }
+
+  .entry .rank-num {
+    font-size: var(--fs-rank);
+    font-weight: 700;
+    color: rgba(var(--color-text-r), var(--color-text-g), var(--color-text-b), 0.35);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+    text-align: var(--align-opposite);
+  }
+
+  .entry.current-player .rank-num { color: var(--color-player); }
+  .entry.personal-best .rank-num { color: var(--color-pb); }
+
+  .entry .accuracy {
+    font-size: var(--fs-acc);
+    font-weight: 700;
+    color: rgba(var(--color-text-r), var(--color-text-g), var(--color-text-b), 0.35);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+  }
+
+  .placeholder {
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    font-size: var(--fs-idle);
+    padding: 14px;
+    font-style: italic;
+  }
+
+  .disconnected {
+    text-align: center;
+    color: rgba(255,100,100,0.4);
+    font-size: 12px;
+    padding: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="leaderboard" class="hidden">
+  <div class="player-header" id="playerHeader" style="display:none;">
+    <div class="stat">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="playerScore">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Accuracy</div>
+      <div class="stat-value acc" id="playerAccuracy">0.00%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Rank</div>
+      <div class="stat-value rank" id="playerRank">#-</div>
+    </div>
+  </div>
+  <div id="rows"></div>
+  <div class="placeholder" id="placeholder" style="display:none;"></div>
+</div>
+<div class="disconnected" id="disconnected" style="display:none;">Connecting...</div>
+
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+
+  var DEFAULTS = {
+    rows: parseInt(params.get('rows')) || 10,
+    showImages: params.get('showimages') === 'true',
+    showStats: params.get('showstats') === 'true',
+    showWhenIdle: true,
+    fontSizeBase: parseInt(params.get('fontsizebase')) || 25,
+    bgOpacity: parseIntOrDefault(params.get('bgopacity'), 100),
+    playerColor: '#66ccff',
+    pbColor: '#ffcc33',
+    textColor: '#ffffff',
+    alignment: 'left',
+    fadeDepth: 5,
+    rankByAccuracy: false,
+    port: params.get('port') || window.location.port || '38452'
+  };
+
+  var SETTINGS = {
+    rows: DEFAULTS.rows,
+    showImages: DEFAULTS.showImages,
+    showStats: DEFAULTS.showStats,
+    showWhenIdle: DEFAULTS.showWhenIdle,
+    fontSizeBase: DEFAULTS.fontSizeBase,
+    bgOpacity: DEFAULTS.bgOpacity,
+    playerColor: DEFAULTS.playerColor,
+    pbColor: DEFAULTS.pbColor,
+    textColor: DEFAULTS.textColor,
+    alignment: DEFAULTS.alignment,
+    fadeDepth: DEFAULTS.fadeDepth,
+    rankByAccuracy: DEFAULTS.rankByAccuracy
+  };
+
+  var wsUrl = 'ws://localhost:' + DEFAULTS.port + '/overlay';
+  var PLACEHOLDER_AVATAR = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#333"/><circle cx="50" cy="35" r="16" fill="#555"/><ellipse cx="50" cy="75" rx="30" ry="25" fill="#555"/></svg>');
+
+  var lbEl = document.getElementById('leaderboard');
+  var playerHeaderEl = document.getElementById('playerHeader');
+  var playerScoreEl = document.getElementById('playerScore');
+  var playerAccuracyEl = document.getElementById('playerAccuracy');
+  var playerRankEl = document.getElementById('playerRank');
+  var rowsEl = document.getElementById('rows');
+  var placeholderEl = document.getElementById('placeholder');
+  var disconnectedEl = document.getElementById('disconnected');
+
+  var ws = null;
+  var reconnectTimer = null;
+  var prevPlayerRank = -1;
+  var lastJson = '';
+  var renderTimer = null;
+  var pendingData = null;
+  var entryEls = [];
+  var fadeTimer = null;
+  var prevIsActive = false;
+  var pendingTransitionClear = false;
+  var _configReceived = false;
+
+  function connect() {
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
+    ws = new WebSocket(wsUrl);
+    ws.onopen = function() { disconnectedEl.style.display = 'none'; };
+    ws.onclose = function() {
+      disconnectedEl.style.display = 'block';
+      disconnectedEl.textContent = 'Disconnected - reconnecting...';
+      setLbVisible(false);
+      scheduleReconnect();
+    };
+    ws.onerror = function() {
+      disconnectedEl.style.display = 'block';
+      disconnectedEl.textContent = 'Connection error - retrying...';
+    };
+    ws.onmessage = function(evt) {
+      if (evt.data === lastJson) return;
+      lastJson = evt.data;
+      scheduleRender(JSON.parse(evt.data));
+    };
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(function() { reconnectTimer = null; connect(); }, 2000);
+  }
+
+  function scheduleRender(data) {
+    pendingData = data;
+    if (renderTimer) return;
+    renderTimer = setTimeout(function() {
+      renderTimer = null;
+      var d = pendingData;
+      pendingData = null;
+      render(d);
+    }, 80);
+  }
+
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function accStr(a) { return a <= 0 ? '--.--%' : (a * 100).toFixed(2) + '%'; }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function parseIntOrDefault(value, fallback) {
+    var parsed = parseInt(value, 10);
+    return isNaN(parsed) ? fallback : parsed;
+  }
+  function hexToRgb(hex) {
+    var r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return r ? { r: parseInt(r[1], 16), g: parseInt(r[2], 16), b: parseInt(r[3], 16) } : null;
+  }
+
+  function applyLayout() {
+    document.documentElement.style.setProperty('--rows', SETTINGS.rows);
+    document.documentElement.style.setProperty('--fs-body', SETTINGS.fontSizeBase + 'px');
+    var a = Math.max(0, Math.min(1, SETTINGS.bgOpacity / 100));
+    document.documentElement.style.setProperty('--bg-amount', a);
+    var pc = hexToRgb(SETTINGS.playerColor);
+    if (pc) {
+      document.documentElement.style.setProperty('--color-player-r', pc.r);
+      document.documentElement.style.setProperty('--color-player-g', pc.g);
+      document.documentElement.style.setProperty('--color-player-b', pc.b);
+      document.documentElement.style.setProperty('--color-player', 'rgb(' + pc.r + ',' + pc.g + ',' + pc.b + ')');
+    }
+    var pb = hexToRgb(SETTINGS.pbColor);
+    if (pb) {
+      document.documentElement.style.setProperty('--color-pb-r', pb.r);
+      document.documentElement.style.setProperty('--color-pb-g', pb.g);
+      document.documentElement.style.setProperty('--color-pb-b', pb.b);
+      document.documentElement.style.setProperty('--color-pb', 'rgb(' + pb.r + ',' + pb.g + ',' + pb.b + ')');
+    }
+    var tc = hexToRgb(SETTINGS.textColor);
+    if (tc) {
+      document.documentElement.style.setProperty('--color-text-r', tc.r);
+      document.documentElement.style.setProperty('--color-text-g', tc.g);
+      document.documentElement.style.setProperty('--color-text-b', tc.b);
+      document.documentElement.style.setProperty('--color-text', 'rgb(' + tc.r + ',' + tc.g + ',' + tc.b + ')');
+    }
+    var aVal = SETTINGS.alignment;
+    document.documentElement.style.setProperty('--align', aVal);
+    document.documentElement.style.setProperty('--align-opposite', aVal === 'left' ? 'right' : 'left');
+    document.documentElement.style.setProperty('--align-content', aVal === 'left' ? 'flex-start' : 'flex-end');
+    document.documentElement.style.setProperty('--entry-direction', aVal === 'right' ? 'row-reverse' : 'row');
+  }
+
+  function updateMask(playerVisualIdx, totalRows, fadeDepth, slice) {
+    if (fadeDepth <= 0 || playerVisualIdx < 0) {
+      rowsEl.style.maskImage = 'none';
+      rowsEl.style.webkitMaskImage = 'none';
+      return;
+    }
+    var frac = (fadeDepth / 100) * 0.35;
+    var topFade = 0;
+    if (playerVisualIdx > 0 && (!slice || (slice[0] && slice[0].rank > 1))) {
+      topFade = (playerVisualIdx / totalRows) * frac;
+    }
+    var botCount = totalRows - 1 - playerVisualIdx;
+    var botFade = botCount > 0 ? (botCount / totalRows) * frac : 0;
+    var topEnd = Math.max(0, topFade * 100);
+    var botStart = Math.min(100, 100 - botFade * 100);
+    if (topEnd <= 0 && botStart >= 100) {
+      rowsEl.style.maskImage = 'none';
+      rowsEl.style.webkitMaskImage = 'none';
+      return;
+    }
+    var parts = [];
+    if (topEnd > 0) {
+      parts.push('transparent 0%');
+      parts.push('transparent ' + topEnd + '%');
+      parts.push('black ' + Math.min(topEnd + 6, botStart) + '%');
+    } else {
+      parts.push('black 0%');
+    }
+    if (botStart < 100) {
+      var blackEnd = Math.max(botStart - 6, topEnd > 0 ? Math.min(topEnd + 6, 100) : 0);
+      parts.push('black ' + blackEnd + '%');
+      parts.push('transparent ' + botStart + '%');
+      parts.push('transparent 100%');
+    } else if (topEnd > 0) {
+      parts.push('black 100%');
+    }
+    var grad = 'linear-gradient(to bottom, ' + parts.join(', ') + ')';
+    rowsEl.style.maskImage = grad;
+    rowsEl.style.webkitMaskImage = grad;
+  }
+
+  function setLbVisible(v) {
+    if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null; }
+    if (v) {
+      lbEl.classList.remove('hidden');
+    } else {
+      lbEl.classList.add('hidden');
+      fadeTimer = setTimeout(function() {
+        fadeTimer = null;
+        if (lbEl.classList.contains('hidden')) {
+          rowsEl.innerHTML = '';
+          entryEls = [];
+          prevPlayerRank = -1;
+        }
+      }, 400);
+    }
+  }
+
+  function renderIdleContent() {
+    if (SETTINGS.showWhenIdle) {
+    pendingTransitionClear = false;
+    setLbVisible(true);
+      updateMask(0, SETTINGS.rows, SETTINGS.fadeDepth, null);
+      playerHeaderEl.style.display = SETTINGS.showStats ? 'flex' : 'none';
+      playerScoreEl.textContent = '0';
+      playerAccuracyEl.textContent = '0.00%';
+      playerRankEl.textContent = '#--';
+
+      var placeholderCount = Math.min(SETTINGS.rows, 10);
+      var fakeNames = ['Player1', 'Player2', 'Player3', 'Player4', 'Player5', 'Player6', 'Player7', 'Player8', 'Player9', 'Player10'];
+      var fakeScores = [987654, 876543, 765432, 654321, 543210, 432109, 321098, 210987, 109876, 50000];
+      var fakeAccs = [0.9678, 0.9543, 0.9432, 0.9321, 0.9210, 0.9109, 0.8998, 0.8787, 0.8576, 0.7561];
+
+      while (entryEls.length > placeholderCount) {
+        var old = entryEls.pop();
+        if (old.el.parentNode) old.el.parentNode.removeChild(old.el);
+      }
+
+      for (var i = 0; i < placeholderCount; i++) {
+        var fakeEntry = { rank: i + 1, name: fakeNames[i], score: fakeScores[i], accuracy: fakeAccs[i], avatarUrl: PLACEHOLDER_AVATAR, isCurrentPlayer: i > 0 && i === placeholderCount - 2, isPersonalBest: i === 0 };
+        var existing = i < entryEls.length ? entryEls[i] : null;
+        if (!existing) {
+          var dom = createEntryDom(fakeEntry);
+          rowsEl.appendChild(dom.el);
+          entryEls.push(dom);
+          updateEntryDom(dom, fakeEntry, false);
+        } else {
+          updateEntryDom(existing, fakeEntry, false);
+        }
+      }
+      placeholderEl.style.display = 'none';
+    } else {
+      setLbVisible(false);
+      placeholderEl.style.display = 'none';
+    }
+  }
+
+  function render(data) {
+    if (data.config) {
+      _configReceived = true;
+      SETTINGS.rows = data.config.rows || DEFAULTS.rows;
+      SETTINGS.showImages = data.config.showImages || false;
+      SETTINGS.showStats = data.config.showStats || false;
+      SETTINGS.showWhenIdle = data.config.showWhenIdle === true;
+      SETTINGS.fontSizeBase = data.config.fontSizeBase || DEFAULTS.fontSizeBase;
+      SETTINGS.bgOpacity = typeof data.config.backgroundOpacity === 'number' && !isNaN(data.config.backgroundOpacity)
+        ? data.config.backgroundOpacity
+        : DEFAULTS.bgOpacity;
+      SETTINGS.playerColor = data.config.playerColor || DEFAULTS.playerColor;
+      SETTINGS.pbColor = data.config.pbColor || DEFAULTS.pbColor;
+      SETTINGS.textColor = data.config.textColor || DEFAULTS.textColor;
+      SETTINGS.alignment = data.config.alignment || DEFAULTS.alignment;
+      SETTINGS.fadeDepth = typeof data.config.fadeDepth === 'number' && !isNaN(data.config.fadeDepth)
+        ? data.config.fadeDepth
+        : DEFAULTS.fadeDepth;
+      SETTINGS.rankByAccuracy = data.config.rankByAccuracy === true;
+    }
+
+    if (!_configReceived) {
+      setLbVisible(false);
+      return;
+    }
+
+    applyLayout();
+
+    var isActive = data.isActive === true;
+
+    if (!prevIsActive && isActive) {
+      lbEl.classList.add('hidden');
+      pendingTransitionClear = true;
+      setTimeout(function() {
+        if (pendingTransitionClear) {
+          pendingTransitionClear = false;
+          rowsEl.innerHTML = '';
+          entryEls = [];
+          prevPlayerRank = -1;
+        }
+      }, 400);
+    }
+
+    if (prevIsActive && !isActive) {
+      pendingTransitionClear = false;
+      lbEl.classList.add('hidden');
+      setTimeout(function() {
+        rowsEl.innerHTML = '';
+        entryEls = [];
+        prevPlayerRank = -1;
+        renderIdleContent();
+      }, 400);
+      prevIsActive = false;
+      return;
+    }
+
+    prevIsActive = isActive;
+
+    if (!isActive) {
+      renderIdleContent();
+      return;
+    }
+
+    var lb = data.leaderboard || [];
+
+    if (lb.length === 0) {
+      if (!pendingTransitionClear) {
+        while (entryEls.length > 0) {
+          var old = entryEls.pop();
+          if (old.el.parentNode) old.el.parentNode.removeChild(old.el);
+        }
+      }
+      placeholderEl.style.display = 'none';
+      return;
+    }
+
+    if (pendingTransitionClear) {
+      pendingTransitionClear = false;
+    }
+
+    setLbVisible(true);
+
+    placeholderEl.style.display = 'none';
+
+    var playerIdx = -1;
+    for (var i = 0; i < lb.length; i++) {
+      if (lb[i].isCurrentPlayer) { playerIdx = i; break; }
+    }
+
+    var liveAccRank = 0;
+    if (SETTINGS.rankByAccuracy && playerIdx >= 0) {
+      var playerAcc = data.playerAccuracy || 0;
+      if (playerAcc > 0) {
+        liveAccRank = 1;
+        for (var i = 0; i < lb.length; i++) {
+          if (i !== playerIdx && lb[i].accuracy > 0 && lb[i].accuracy > playerAcc) liveAccRank++;
+        }
+      }
+      if (liveAccRank > 0) {
+        var liveEntry = lb.splice(playerIdx, 1)[0];
+        var targetIdx = Math.min(liveAccRank - 1, lb.length);
+        lb.splice(targetIdx, 0, liveEntry);
+        playerIdx = targetIdx;
+      }
+    }
+
+    playerHeaderEl.style.display = SETTINGS.showStats ? 'flex' : 'none';
+    if (SETTINGS.showStats) {
+      playerScoreEl.textContent = fmt(data.playerScore || 0);
+      playerAccuracyEl.textContent = accStr(data.playerAccuracy || 0);
+      var displayRank = data.playerRank;
+      playerRankEl.textContent = (displayRank > 0 && displayRank <= 50) ? '#' + displayRank : '#--';
+    }
+
+    var rows = SETTINGS.rows;
+    var slice = [];
+    var pinRow = Math.max(0, rows - 2);
+    if (playerIdx < 0) {
+      slice = lb.slice(0, rows);
+    } else if (playerIdx <= pinRow) {
+      slice = lb.slice(0, rows);
+    } else {
+      var start = Math.max(0, playerIdx - pinRow);
+      var end = Math.min(lb.length, start + rows);
+      start = Math.max(0, end - rows);
+      slice = lb.slice(start, end);
+    }
+
+    var playerVisualIdx = -1;
+    for (var i = 0; i < slice.length; i++) {
+      if (slice[i].isCurrentPlayer) { playerVisualIdx = i; break; }
+    }
+    if (slice.length < rows) {
+      rowsEl.style.maskImage = 'none';
+      rowsEl.style.webkitMaskImage = 'none';
+    } else {
+      updateMask(playerVisualIdx, rows, SETTINGS.fadeDepth, slice);
+    }
+
+    var playerNow = data.playerRank || -1;
+    var playerGainedRank = prevPlayerRank > 0 && playerNow > 0 && playerNow < prevPlayerRank;
+    prevPlayerRank = playerNow;
+
+    while (entryEls.length > slice.length) {
+      var old = entryEls.pop();
+      if (old.el.parentNode) old.el.parentNode.removeChild(old.el);
+    }
+
+    for (var i = 0; i < slice.length; i++) {
+      var e = slice[i];
+      var existing = i < entryEls.length ? entryEls[i] : null;
+
+      if (!existing) {
+        var dom = createEntryDom(e);
+        rowsEl.appendChild(dom.el);
+        entryEls.push(dom);
+        updateEntryDom(dom, e, playerGainedRank);
+      } else {
+        updateEntryDom(existing, e, playerGainedRank);
+      }
+    }
+
+    placeholderEl.style.display = 'none';
+  }
+
+  function createEntryDom(e) {
+    var el = document.createElement('div');
+    el.className = 'entry';
+
+    var avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.style.display = 'none';
+
+    var info = document.createElement('div');
+    info.className = 'info';
+
+    var nameRow = document.createElement('div');
+    nameRow.className = 'name-row';
+
+    var name = document.createElement('span');
+    name.className = 'name';
+
+    var pb = document.createElement('span');
+    pb.className = 'pb-badge';
+    pb.textContent = 'PB';
+
+    nameRow.appendChild(name);
+    nameRow.appendChild(pb);
+
+    var score = document.createElement('div');
+    score.className = 'score';
+
+    info.appendChild(nameRow);
+    info.appendChild(score);
+
+    var right = document.createElement('div');
+    right.className = 'right';
+
+    var rankNum = document.createElement('div');
+    rankNum.className = 'rank-num';
+
+    var accuracy = document.createElement('div');
+    accuracy.className = 'accuracy';
+
+    right.appendChild(rankNum);
+    right.appendChild(accuracy);
+
+    el.appendChild(avatar);
+    el.appendChild(info);
+    el.appendChild(right);
+
+    return { el: el, avatar: avatar, name: name, pb: pb, score: score, rankNum: rankNum, accuracy: accuracy };
+  }
+
+  function updateEntryDom(dom, e, playerGainedRank) {
+    var el = dom.el;
+    var classes = 'entry';
+    if (e.isCurrentPlayer) classes += ' current-player';
+    if (e.isPersonalBest) classes += ' personal-best';
+    if (dom.rankUpAnimating) classes += ' rank-up';
+    el.className = classes;
+
+    if (e.isCurrentPlayer && playerGainedRank) {
+      el.classList.remove('rank-up');
+      void el.offsetWidth;
+      el.classList.add('rank-up');
+      dom.rankUpAnimating = true;
+      if (dom.rankUpCleanup) {
+        el.removeEventListener('animationend', dom.rankUpCleanup);
+      }
+      dom.rankUpCleanup = function cleanup() {
+        el.classList.remove('rank-up');
+        dom.rankUpAnimating = false;
+        dom.rankUpCleanup = null;
+        el.removeEventListener('animationend', cleanup);
+      };
+      el.addEventListener('animationend', dom.rankUpCleanup);
+    }
+
+    dom.avatar.style.display = SETTINGS.showImages ? 'block' : 'none';
+    dom.avatar.style.backgroundImage = e.avatarUrl ? 'url(' + esc(e.avatarUrl) + ')' : 'none';
+
+    dom.name.textContent = e.name;
+    dom.pb.style.display = e.isPersonalBest ? 'inline' : 'none';
+    dom.score.textContent = fmt(e.score);
+    dom.rankNum.textContent = (e.rank > 0 && e.rank <= 50) ? '#' + e.rank : '#--';
+    dom.accuracy.textContent = accStr(e.accuracy);
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

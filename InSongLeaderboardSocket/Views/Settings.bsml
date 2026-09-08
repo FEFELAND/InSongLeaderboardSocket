@@ -1,0 +1,36 @@
+<scrollable-settings-container>
+  <settings-submenu text="About" hover-hint="Information about this mod" font-size="4">
+    <scrollable-settings-container>
+      <clickable-text text="&#60; Back" align="Left" click-event="back" font-size="2.5" color="white" pad-bottom="1" />
+      <horizontal pref-height="6" background="panel-top" pad-left="3" pad-right="3" child-align="MiddleCenter">
+        <text text="InSongLeaderboard-Websocket" font-size="3.6" bold="true" italics="false" align="Center"/>
+      </horizontal>
+      <horizontal pref-height="16" pref-width="90" background="round-rect-panel" pad-top="2" pad-left="4" pad-right="4" pad-bottom="2">
+        <text text="~about-description" font-size="2.5" italics="false" word-wrapping="true" align="TopLeft"/>
+      </horizontal>
+      <horizontal pref-height="6" background="panel-top" pad-left="3" pad-right="3" child-align="MiddleCenter">
+        <text text="REFERENCES" font-size="3.6" bold="true" italics="false" align="Center"/>
+      </horizontal>
+      <horizontal pref-height="17" pref-width="90" background="round-rect-panel" pad-top="2" pad-left="4" pad-right="4" pad-bottom="2">
+        <text text="~about-references" font-size="2.5" italics="false" word-wrapping="true" align="TopLeft"/>
+      </horizontal>
+    </scrollable-settings-container>
+  </settings-submenu>
+
+  <button id="watermark-btn" text="~watermark-text" font-size="2" />
+  <button id="copy-btn" text="Copy Overlay URL for OBS" on-click="copy-url-click" hover-hint="https://fefeland.github.io/InSongLeaderboardWSOverlay/" />
+
+  <slider-setting text="Visible Rows" min="3" max="50" increment="1" value="rows" integer-only="true" apply-on-change="true" hover-hint="How many leaderboard entries to display" />
+  <toggle-setting text="Show Profile Images" value="show-images" apply-on-change="true" hover-hint="Show player avatars next to names" />
+  <toggle-setting text="Show Player Stats" value="show-stats" apply-on-change="true" hover-hint="Show score, accuracy and rank header bar" />
+  <toggle-setting text="Show While Idle" value="show-when-idle" apply-on-change="true" hover-hint="Keep the overlay visible when no song is playing" />
+  <toggle-setting text="Rank By Accuracy" value="rank-by-accuracy" apply-on-change="true" hover-hint="Position your live entry by accuracy instead of score" />
+  <slider-setting text="Base Font Size" min="12" max="100" increment="1" value="font-size-base" integer-only="true" apply-on-change="true" hover-hint="Global font size for all text" />
+  <slider-setting text="BG Opacity %" min="0" max="100" increment="5" value="background-opacity" integer-only="true" apply-on-change="true" hover-hint="Background darkness of entry cards" />
+  <dropdown-list-setting text="Leaderboard Source" value="source" choices="source-choices" apply-on-change="true" hover-hint="Which leaderboard service to query. Note: BeatLeader scope (Global / Friends / Country) is auto-detected from the in-game menu." />
+  <dropdown-list-setting text="Alignment" value="alignment" choices="alignment-choices" apply-on-change="true" hover-hint="Text alignment within the overlay" />
+  <color-setting text="Player Color" value="player-color" bind-value="true" apply-on-change="true" hover-hint="Accent color for your own entry" />
+  <color-setting text="PB Color" value="pb-color" bind-value="true" apply-on-change="true" hover-hint="Accent color for personal best entries" />
+  <color-setting text="Text Color" value="text-color" bind-value="true" apply-on-change="true" hover-hint="Color for all other leaderboard text" />
+  <slider-setting text="Edge Fade" min="0" max="100" increment="5" value="fade-depth" integer-only="true" apply-on-change="true" hover-hint="How much the edges fade based on your position" />
+</scrollable-settings-container>
