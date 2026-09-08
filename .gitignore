@@ -15,6 +15,9 @@ bin/
 ext/
 *.log
 
+# Standalone overlay copy for the hosted GitHub Pages project (not part of this repo)
+UploadThese/
+
 # OS noise
 .DS_Store
 Thumbs.db
