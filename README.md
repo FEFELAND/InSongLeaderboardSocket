@@ -6,6 +6,8 @@ Viewers  get a smooth, configurable leaderboard that follows your live rank as y
 
 > ⚠ Before you continue: Unfortunately this mod is entirely vibe-coded. But this does not mean things go untested. If you are ok with that, carry on. ⚠
 
+https://github.com/user-attachments/assets/8540a257-e60d-4c60-82cb-e031be4a6543
+
 # Features:
 - Live in-song leaderboard for **ScoreSaber** and **BeatLeader**. BeatLeader scope (Global / Country / Following) is auto-detected from the in-game menu.
 - **OBS-ready overlay** Use the [hosted standalone overlay](https://fefeland.github.io/InSongLeaderboardWSOverlay/).
@@ -20,6 +22,8 @@ Viewers  get a smooth, configurable leaderboard that follows your live rank as y
 - **`Rank By Accuracy`** - optionally position your live entry by accuracy instead of raw score.
 - Fetches top scores with pagination, player avatars and personal bests from both APIs.
 - No dependency on the ScoreSaber/BeatLeader mods - queries their public HTTP APIs directly.
+
+![General Panel](Assets/Images/islbws-menu.jpg)
 
 # Installing / Setting Up
 ### Dependencies:
