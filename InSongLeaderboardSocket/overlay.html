@@ -577,11 +577,13 @@
           if (i !== playerIdx && lb[i].accuracy > 0 && lb[i].accuracy > playerAcc) liveAccRank++;
         }
       }
+      if (liveAccRank <= 0 && data.playerAccuracyRank > 0) liveAccRank = data.playerAccuracyRank;
       if (liveAccRank > 0) {
         var liveEntry = lb.splice(playerIdx, 1)[0];
         var targetIdx = Math.min(liveAccRank - 1, lb.length);
         lb.splice(targetIdx, 0, liveEntry);
         playerIdx = targetIdx;
+        lb[playerIdx].rank = liveAccRank;
       }
     }
 
@@ -589,7 +591,7 @@
     if (SETTINGS.showStats) {
       playerScoreEl.textContent = fmt(data.playerScore || 0);
       playerAccuracyEl.textContent = accStr(data.playerAccuracy || 0);
-      var displayRank = data.playerRank;
+      var displayRank = SETTINGS.rankByAccuracy ? liveAccRank : data.playerRank;
       playerRankEl.textContent = (displayRank > 0 && displayRank <= 50) ? '#' + displayRank : '#--';
     }
 
@@ -619,7 +621,7 @@
     }
 
     var playerNow = data.playerRank || -1;
-    var playerGainedRank = prevPlayerRank > 0 && playerNow > 0 && playerNow < prevPlayerRank;
+    var playerGainedRank = !SETTINGS.rankByAccuracy && prevPlayerRank > 0 && playerNow > 0 && playerNow < prevPlayerRank;
     prevPlayerRank = playerNow;
 
     while (entryEls.length > slice.length) {
