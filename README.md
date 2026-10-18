@@ -4,7 +4,9 @@ A Beat Saber mod that shows a real-time in-song leaderboard overlay for OBS, str
 Built as a rework of [InSongLeaderboard](https://github.com/PatsanMCK/InSongLeaderboard) (itself a rework of [Kylemc1413's original](https://github.com/Kylemc1413/InSongLeaderboard)). Instead of drawing a board directly in the game world, this version serves an HTML overlay you load in OBS as a Browser Source, and pushes live leaderboard updates to it over WebSocket as you play.
 Viewers  get a smooth, configurable leaderboard that follows your live rank as you climb.
 
-> ⚠ Before you continue: Unfortunately this mod is entirely vibe-coded. But this does not mean things go untested. If you are ok with that, carry on. ⚠
+> [!WARNING]  
+> Before you continue: Unfortunately this mod is entirely vibe-coded. <br>
+> But this does not mean things go untested. If you are ok with that, carry on.
 
 https://github.com/user-attachments/assets/8540a257-e60d-4c60-82cb-e031be4a6543
 
